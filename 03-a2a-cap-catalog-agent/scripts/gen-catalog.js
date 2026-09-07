@@ -1,0 +1,288 @@
+"use strict";
+
+/**
+ * gen-catalog.js — STEP 2 of the generation pipeline.
+ *
+ * Reads the raw snapshot (reference/odata-catalog.snapshot.json, produced by
+ * fetch-metadata.js) and CURATES it into a normalized, published catalog per
+ * the DECISIONS P2.1 curation policy:
+ *
+ *   KEEP  : public API_* services only (allow-list /^API_/).
+ *   DROP  : ServiceType=UI services              (name heuristic: *_UI / UI_*).
+ *   DROP  : obsolete / deprecated services       (name contains OBSOLETE/DEPRECATED).
+ *   DROP  : customer namespace Z* / Y* services  (never published by default).
+ *
+ * An override allow-list (--allow NAME,NAME) can force-keep specific Z* / Y*
+ * services, but that is opt-in and OFF by default.
+ *
+ * Even though the current snapshot happens to contain only API_* services (so
+ * nothing is dropped), the filters run PROGRAMMATICALLY on every service to
+ * DEMONSTRATE the curation gate — a future/customer snapshot with Z* / UI / obsolete
+ * services would see them excluded here with a logged reason.
+ *
+ * Emits (under reference/):
+ *   catalog.curated.json  — normalized catalog consumed by gen-skills.js
+ *   catalog.curated.md    — human-readable catalog
+ *
+ * Usage (Windows PowerShell):
+ *   node scripts\gen-catalog.js
+ *   node scripts\gen-catalog.js --allow ZMY_SERVICE,YOTHER_SRV
+ */
+
+const fs = require("fs");
+const path = require("path");
+
+const ROOT = path.join(__dirname, "..");
+const REF_DIR = path.join(ROOT, "reference");
+const SNAPSHOT_IN = path.join(REF_DIR, "odata-catalog.snapshot.json");
+const INHERITED_SNAPSHOT = path.join(
+  ROOT,
+  "..",
+  "01-a2a-cap-agent",
+  "reference",
+  "odata-catalog.json"
+);
+const CATALOG_JSON_OUT = path.join(REF_DIR, "catalog.curated.json");
+const CATALOG_MD_OUT = path.join(REF_DIR, "catalog.curated.md");
+
+const GENERATOR = "scripts/gen-catalog.js";
+
+/* -------------------------------------------------------------------------- */
+/* Curation rules                                                             */
+/* -------------------------------------------------------------------------- */
+
+function parseAllowList() {
+  const i = process.argv.indexOf("--allow");
+  if (i === -1 || !process.argv[i + 1]) return new Set();
+  return new Set(
+    process.argv[i + 1]
+      .split(",")
+      .map((s) => s.trim().toUpperCase())
+      .filter(Boolean)
+  );
+}
+
+/**
+ * Decide whether a service is published. Returns {keep:boolean, reason:string}.
+ * Order matters: an explicit allow-list override wins first.
+ */
+function classify(name, allow) {
+  const n = String(name).toUpperCase();
+
+  if (/^[ZY]/.test(n)) {
+    if (allow.has(n)) return { keep: true, reason: "override-allow (Z/Y)" };
+    return { keep: false, reason: "customer namespace (Z*/Y*)" };
+  }
+  if (/(^UI_)|(_UI$)|(_UI_)/.test(n)) {
+    return { keep: false, reason: "ServiceType=UI (name heuristic)" };
+  }
+  if (/OBSOLETE|DEPRECATED/.test(n)) {
+    return { keep: false, reason: "obsolete/deprecated" };
+  }
+  if (/^API_/.test(n)) {
+    return { keep: true, reason: "public API_* service" };
+  }
+  // Anything else is not on the allow-list -> excluded by default.
+  if (allow.has(n)) return { keep: true, reason: "override-allow" };
+  return { keep: false, reason: "not an API_* allow-listed service" };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Normalization                                                              */
+/* -------------------------------------------------------------------------- */
+
+// Standard S/4HANA API_* services live under the /sap/ namespace. (SAP demo
+// services under IWBEP are not part of the curated API catalog.)
+function namespaceFor(/* name */) {
+  return "sap";
+}
+
+function normalizeProperty(p) {
+  return {
+    name: p.name,
+    label: p.label || "",
+    type: p.type || "Edm.String",
+    maxLength:
+      p.maxLength === null || p.maxLength === undefined
+        ? undefined
+        : Number(p.maxLength) || undefined,
+    key: Boolean(p.key),
+    filterable: Boolean(p.filterable),
+    sortable: Boolean(p.sortable),
+  };
+}
+
+function normalizeEntitySet(es) {
+  return {
+    name: es.name,
+    entityType: es.entityType || "",
+    role: es.role || "",
+    keys: Array.isArray(es.keys) ? es.keys.slice() : [],
+    requiresFilter: Boolean(es.requiresFilter),
+    properties: (es.properties || []).map(normalizeProperty),
+  };
+}
+
+function normalizeService(name, svc) {
+  return {
+    service: name,
+    domain: svc.domain || "",
+    hub: svc.hub || "",
+    namespace: namespaceFor(name),
+    entitySets: (svc.entitySets || []).map(normalizeEntitySet),
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Markdown                                                                    */
+/* -------------------------------------------------------------------------- */
+
+function renderMarkdown(catalog, decisions) {
+  const lines = [];
+  lines.push("# Curated SAP OData Catalog");
+  lines.push("");
+  lines.push("_Generated by `" + GENERATOR + "` — do not edit by hand._");
+  lines.push("");
+  lines.push("Generated at: " + catalog.generatedAt);
+  lines.push("");
+  lines.push(
+    "Kept **" +
+      catalog.counts.kept +
+      "** of **" +
+      catalog.counts.total +
+      "** services (" +
+      catalog.counts.dropped +
+      " dropped by the curation gate)."
+  );
+  lines.push("");
+
+  lines.push("## Curation decisions");
+  lines.push("");
+  lines.push("| Service | Kept | Reason |");
+  lines.push("| --- | --- | --- |");
+  for (const d of decisions) {
+    lines.push("| " + d.name + " | " + (d.keep ? "✅" : "❌") + " | " + d.reason + " |");
+  }
+  lines.push("");
+
+  lines.push("## Published services");
+  lines.push("");
+  const byDomain = {};
+  for (const s of Object.values(catalog.services)) {
+    (byDomain[s.domain || "(none)"] ||= []).push(s);
+  }
+  for (const domain of Object.keys(byDomain).sort()) {
+    lines.push("### " + domain);
+    lines.push("");
+    for (const s of byDomain[domain].sort((a, b) => a.service.localeCompare(b.service))) {
+      lines.push(
+        "- **" +
+          s.service +
+          "** (" +
+          s.entitySets.length +
+          " entity sets) — namespace `" +
+          s.namespace +
+          "`"
+      );
+      for (const es of s.entitySets.slice(0, 6)) {
+        lines.push(
+          "  - `" +
+            es.name +
+            "` — key: " +
+            (es.keys.join(", ") || "(none)") +
+            "; " +
+            es.properties.length +
+            " props"
+        );
+      }
+      if (s.entitySets.length > 6) {
+        lines.push("  - … and " + (s.entitySets.length - 6) + " more");
+      }
+    }
+    lines.push("");
+  }
+  return lines.join("\n") + "\n";
+}
+
+/* -------------------------------------------------------------------------- */
+
+function loadSnapshot() {
+  if (fs.existsSync(SNAPSHOT_IN)) {
+    const stamped = JSON.parse(fs.readFileSync(SNAPSHOT_IN, "utf8"));
+    // fetch-metadata wraps the raw catalog under `.services`.
+    return stamped.services || stamped;
+  }
+  if (fs.existsSync(INHERITED_SNAPSHOT)) {
+    process.stdout.write(
+      "gen-catalog: snapshot not found, falling back to inherited " +
+        INHERITED_SNAPSHOT +
+        "\n"
+    );
+    return JSON.parse(fs.readFileSync(INHERITED_SNAPSHOT, "utf8"));
+  }
+  throw new Error(
+    "No snapshot found. Run `npm run fetch:metadata` first (writes " +
+      SNAPSHOT_IN +
+      ")."
+  );
+}
+
+function main() {
+  const allow = parseAllowList();
+  const raw = loadSnapshot();
+  const names = Object.keys(raw).sort();
+
+  const decisions = [];
+  const services = {};
+  let kept = 0;
+  let dropped = 0;
+
+  for (const name of names) {
+    const verdict = classify(name, allow);
+    decisions.push({ name, keep: verdict.keep, reason: verdict.reason });
+    if (verdict.keep) {
+      services[name] = normalizeService(name, raw[name]);
+      kept++;
+    } else {
+      dropped++;
+    }
+  }
+
+  const catalog = {
+    __generated: true,
+    generator: GENERATOR,
+    generatedAt: new Date().toISOString(),
+    counts: { total: names.length, kept, dropped },
+    curation: {
+      allowList: [...allow],
+      rules: [
+        "keep /^API_/ public services",
+        "drop Z*/Y* customer namespace (unless --allow)",
+        "drop *_UI / UI_* (ServiceType=UI heuristic)",
+        "drop OBSOLETE/DEPRECATED",
+      ],
+    },
+    services,
+  };
+
+  fs.mkdirSync(REF_DIR, { recursive: true });
+  fs.writeFileSync(CATALOG_JSON_OUT, JSON.stringify(catalog, null, 2), "utf8");
+  fs.writeFileSync(CATALOG_MD_OUT, renderMarkdown(catalog, decisions), "utf8");
+
+  process.stdout.write("gen-catalog: curation complete\n");
+  process.stdout.write("  total   : " + names.length + "\n");
+  process.stdout.write("  kept    : " + kept + "\n");
+  process.stdout.write("  dropped : " + dropped + "\n");
+  const droppedList = decisions.filter((d) => !d.keep);
+  if (droppedList.length) {
+    process.stdout.write("  dropped services:\n");
+    for (const d of droppedList) {
+      process.stdout.write("    - " + d.name + " (" + d.reason + ")\n");
+    }
+  }
+  process.stdout.write("  output  : " + CATALOG_JSON_OUT + "\n");
+  process.stdout.write("          : " + CATALOG_MD_OUT + "\n");
+  process.stdout.write("\nNext: npm run gen:skills\n");
+}
+
+main();

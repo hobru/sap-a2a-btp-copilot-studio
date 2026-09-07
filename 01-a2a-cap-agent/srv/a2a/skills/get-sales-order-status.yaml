@@ -1,0 +1,39 @@
+# Skill manifest — see ../skill-schema.json for the full field reference.
+# This file drives BOTH the Agent Card skills[] entry and the deterministic OData call.
+id: get-sales-order-status
+name: Get sales order status
+description: >-
+  Return the current status and header details of a single sales order in the SAP
+  backend, identified by its sales order number. Includes overall processing,
+  delivery and billing status, sold-to party, net value and currency. Use this to
+  answer "what is the status of sales order 12345?".
+domain: sales
+tags: [sales, sales-order, status, odata, read]
+examples:
+  - "What is the status of sales order 12345?"
+  - "Show me the delivery status of order 0000012345."
+
+params:
+  - name: salesOrder
+    type: string
+    required: true
+    description: Sales order document number.
+
+backend:
+  service: API_SALES_ORDER_SRV
+  entitySet: A_SalesOrder
+  operation: getByKey
+  key:
+    - { field: SalesOrder, param: salesOrder }
+  select:
+    - SalesOrder
+    - SalesOrderType
+    - SalesOrganization
+    - SoldToParty
+    - PurchaseOrderByCustomer
+    - SalesOrderDate
+    - TotalNetAmount
+    - TransactionCurrency
+    - OverallSDProcessStatus
+    - OverallDeliveryStatus
+    - OverallOrdReltdBillgStatus

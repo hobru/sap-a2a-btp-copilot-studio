@@ -1,0 +1,42 @@
+id: get-purchase-order-status
+name: Get purchase order status
+description: >-
+  Return the current status and header details of a single purchase order in the SAP
+  backend, identified by its purchase order number, optionally including its line
+  items. Includes supplier, purchasing organization and group, company code, order
+  date and currency. Use this to answer "what is the status of purchase order
+  4500000123?".
+domain: procurement
+tags: [procurement, purchase-order, status, odata, read]
+examples:
+  - "What is the status of purchase order 4500000123?"
+  - "Show purchase order 4500000123 with its items."
+
+params:
+  - name: purchaseOrder
+    type: string
+    required: true
+    description: Purchase order document number.
+  - name: includeItems
+    type: boolean
+    required: false
+    default: false
+    description: When true, also return the purchase order line items.
+
+backend:
+  service: API_PURCHASEORDER_PROCESS_SRV
+  entitySet: A_PurchaseOrder
+  operation: getByKey
+  key:
+    - { field: PurchaseOrder, param: purchaseOrder }
+  select:
+    - PurchaseOrder
+    - PurchaseOrderType
+    - Supplier
+    - PurchasingOrganization
+    - PurchasingGroup
+    - CompanyCode
+    - PurchaseOrderDate
+    - DocumentCurrency
+  expand:
+    - { nav: to_PurchaseOrderItem, when: includeItems }

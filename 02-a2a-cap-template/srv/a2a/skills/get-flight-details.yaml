@@ -1,0 +1,53 @@
+id: get-flight-details
+name: Get flight details
+description: >-
+  Return details of a single scheduled flight from the SAP RMTSAMPLEFLIGHT demo service,
+  identified by the composite key airline id + connection number + flight date. Includes the
+  cities and airports, price, currency, plane type and the maximum / occupied seat counts.
+  Use this to answer "show flight LH 0400 on 2017-11-15".
+
+  NOTE: RMTSAMPLEFLIGHT property names are less standardized than GWSAMPLE_BASIC. Verify the
+  field names below against your own service $metadata before relying on this skill.
+domain: travel
+tags: [travel, flight, airline, connection, seats, price, rmtsampleflight, odata, read, verify-metadata]
+examples:
+  - "Show flight LH 0400 on 2017-11-15."
+  - "Details for airline LH connection 0400 date 2017-11-15."
+  - "How many seats are left on flight LH 0400 on 2017-11-15?"
+
+params:
+  - name: airlineId
+    type: string
+    required: true
+    description: Airline / carrier id (carrid), e.g. "LH".
+  - name: connectionId
+    type: string
+    required: true
+    description: Connection number (connid), e.g. "0400".
+  - name: flightDate
+    type: date
+    required: true
+    description: Flight date (fldate) in YYYY-MM-DD form, e.g. "2017-11-15".
+
+backend:
+  namespace: IWBEP
+  service: RMTSAMPLEFLIGHT
+  entitySet: FlightCollection
+  operation: getByKey
+  key:
+    - { field: carrid, param: airlineId }
+    - { field: connid, param: connectionId }
+    - { field: fldate, param: flightDate }
+  select:
+    - carrid
+    - connid
+    - fldate
+    - cityFrom
+    - cityTo
+    - airportFrom
+    - airportTo
+    - PRICE
+    - CURRENCY
+    - PLANETYPE
+    - SEATSMAX
+    - SEATSOCC

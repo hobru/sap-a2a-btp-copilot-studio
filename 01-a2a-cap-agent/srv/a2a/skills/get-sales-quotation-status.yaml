@@ -1,0 +1,34 @@
+id: get-sales-quotation-status
+name: Get sales quotation status
+description: >-
+  Return the current status and header details of a single sales quotation in the SAP
+  backend, identified by its quotation number. Includes quotation type, sold-to party,
+  date, net value, currency and overall processing status. Use this to answer "what is
+  the status of quotation 20000123?".
+domain: sales
+tags: [sales, sales-quotation, status, odata, read]
+examples:
+  - "What is the status of sales quotation 20000123?"
+  - "Show the details of quotation 0020000123."
+
+params:
+  - name: salesQuotation
+    type: string
+    required: true
+    description: Sales quotation document number.
+
+backend:
+  service: API_SALES_QUOTATION_SRV
+  entitySet: A_SalesQuotation
+  operation: getByKey
+  key:
+    - { field: SalesQuotation, param: salesQuotation }
+  select:
+    - SalesQuotation
+    - SalesQuotationType
+    - SalesOrganization
+    - SoldToParty
+    - SalesQuotationDate
+    - TotalNetAmount
+    - TransactionCurrency
+    - OverallSDProcessStatus

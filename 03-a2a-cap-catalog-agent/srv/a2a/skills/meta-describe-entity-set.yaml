@@ -1,0 +1,38 @@
+# Hand-written META-SKILL (generic, catalog operation). Not generated.
+# Step 3 of the discovery chain — teaches the LLM the exact field names.
+id: describe-entity-set
+name: Describe SAP entity set
+description: >-
+  STEP 3 of catalog discovery. Given a service plus one of its entity sets (e.g. API_BUSINESS_PARTNER
+  + A_BusinessPartner), returns the entity set's key field(s) and its properties with exact names,
+  Edm types, labels, and which are filterable and selectable. Use this AFTER describeService and
+  BEFORE searchEntitySet/getByKey so you use the EXACT field names the backend expects — guessing
+  field names will fail validation. This is a LOCAL capability-index lookup — it never calls the SAP
+  backend. Next: call searchEntitySet (with a structured filter on filterable fields) or getByKey
+  (with the key field value).
+domain: catalog
+tags:
+  - catalog
+  - discovery
+  - fields
+  - schema
+  - metadata
+examples:
+  - Describe the A_BusinessPartner entity set in API_BUSINESS_PARTNER
+  - What fields does A_SalesOrder have?
+  - Show the filterable fields of A_Product
+params:
+  - name: service
+    type: string
+    required: true
+    description: OData service technical name (e.g. API_BUSINESS_PARTNER), as returned by listServices.
+  - name: entitySet
+    type: string
+    required: true
+    description: >-
+      Entity set name within that service (e.g. A_BusinessPartner), as returned by describeService.
+backend:
+  operation: catalog
+  view: describeEntitySet
+  serviceParam: service
+  entitySetParam: entitySet

@@ -1,0 +1,46 @@
+id: list-sales-orders
+name: List sales orders
+description: >-
+  Return a list of recent sales orders from the SAP GWSAMPLE_BASIC demo service. Optionally
+  narrow the result to a single customer (business partner). Each entry includes the order
+  number, customer, gross amount, currency and the lifecycle / billing / delivery status
+  descriptions, plus the creation timestamp. Use this to answer "show recent sales orders"
+  or "list sales orders for customer 0100000000".
+domain: sales
+tags: [sales, sales-order, sales-orders, order, orders, customer, gwsample, odata, read, list]
+examples:
+  - "List the 10 most recent sales orders with customer, amount and status."
+  - "Show sales orders for customer 0100000000."
+  - "What has business partner 0100000000 ordered recently?"
+
+params:
+  - name: customerId
+    type: string
+    required: false
+    pad: 10
+    description: Optional customer (business partner) number. Padded to 10 characters.
+  - name: top
+    type: integer
+    required: false
+    description: Maximum number of sales orders to return.
+
+backend:
+  namespace: IWBEP
+  service: GWSAMPLE_BASIC
+  entitySet: SalesOrderSet
+  operation: list
+  filter:
+    - { field: CustomerID, param: customerId, operator: eq }
+  orderby:
+    - { field: CreatedAt, direction: desc }
+  top: { param: top, default: 20, max: 100 }
+  select:
+    - SalesOrderID
+    - CustomerID
+    - CustomerName
+    - GrossAmount
+    - CurrencyCode
+    - LifecycleStatusDescription
+    - BillingStatusDescription
+    - DeliveryStatusDescription
+    - CreatedAt

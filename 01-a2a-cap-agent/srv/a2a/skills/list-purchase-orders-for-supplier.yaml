@@ -1,0 +1,54 @@
+id: list-purchase-orders-for-supplier
+name: List purchase orders for supplier
+description: >-
+  Return a list of purchase orders for a given supplier in the SAP backend, optionally
+  restricted to one purchasing organization, most recent first. Each entry includes
+  purchase order number, purchasing organization and group, company code, order date
+  and currency. Use this to answer "show the latest purchase orders for supplier
+  100000".
+domain: procurement
+tags: [procurement, purchase-order, list, odata, read]
+examples:
+  - "Show the latest purchase orders for supplier 100000."
+  - "List purchase orders for supplier 0000100000 in purchasing organization 1000."
+
+params:
+  - name: supplier
+    type: string
+    required: true
+    pad: 10
+    description: Supplier number. Padded to 10 characters.
+  - name: purchasingOrganization
+    type: string
+    required: false
+    description: Optional purchasing organization to filter by.
+  - name: top
+    type: integer
+    required: false
+    default: 20
+    min: 1
+    max: 100
+    description: Maximum number of purchase orders to return.
+
+backend:
+  service: API_PURCHASEORDER_PROCESS_SRV
+  entitySet: A_PurchaseOrder
+  operation: list
+  filter:
+    - { field: Supplier, param: supplier, operator: eq }
+    - { field: PurchasingOrganization, param: purchasingOrganization, operator: eq }
+  select:
+    - PurchaseOrder
+    - PurchaseOrderType
+    - Supplier
+    - PurchasingOrganization
+    - PurchasingGroup
+    - CompanyCode
+    - PurchaseOrderDate
+    - DocumentCurrency
+  orderby:
+    - { field: PurchaseOrderDate, direction: desc }
+  top:
+    param: top
+    default: 20
+    max: 100

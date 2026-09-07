@@ -1,0 +1,50 @@
+id: list-sales-orders
+name: List sales orders
+description: >-
+  Return a list of recent sales orders from the SAP backend. Optionally narrow the
+  result to a specific customer (sold-to party) and/or sales organization. Each entry
+  includes the order number, type, sales organization, customer, order date, net value,
+  currency and overall status. Use this to answer "show the 5 most recent sales orders"
+  or "list sales orders for customer 100123".
+domain: sales
+tags: [sales, sales-order, sales-orders, order, orders, list, customer, odata, read]
+examples:
+  - "Retrieve 5 sales orders from SAP S/4HANA with number, customer, date and total value."
+  - "Show the 10 most recent sales orders."
+  - "List sales orders for customer 100123 in sales org 1010."
+
+params:
+  - name: soldToParty
+    type: string
+    required: false
+    pad: 10
+    description: Optional customer (sold-to party) number. Padded to 10 characters.
+  - name: salesOrganization
+    type: string
+    required: false
+    description: Optional sales organization to narrow the result.
+  - name: top
+    type: integer
+    required: false
+    description: Maximum number of orders to return.
+
+backend:
+  service: API_SALES_ORDER_SRV
+  entitySet: A_SalesOrder
+  operation: list
+  filter:
+    - { field: SoldToParty, param: soldToParty, operator: eq }
+    - { field: SalesOrganization, param: salesOrganization, operator: eq }
+  orderby:
+    - { field: SalesOrderDate, direction: desc }
+  top: { param: top, default: 20, max: 100 }
+  select:
+    - SalesOrder
+    - SalesOrderType
+    - SalesOrganization
+    - SoldToParty
+    - SalesOrderDate
+    - TotalNetAmount
+    - TransactionCurrency
+    - OverallSDProcessStatus
+    - OverallDeliveryStatus

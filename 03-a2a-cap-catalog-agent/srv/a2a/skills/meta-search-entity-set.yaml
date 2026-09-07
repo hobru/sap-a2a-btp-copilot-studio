@@ -1,0 +1,57 @@
+# Hand-written META-SKILL (generic, dynamic operation, mode=list). Not generated.
+# Step 4a of the discovery chain — the actual read (many rows).
+id: search-entity-set
+name: Search SAP entity set
+description: >-
+  STEP 4 of catalog discovery — read MANY rows. Given a service + entity set and an optional
+  structured filter, returns matching records from the SAP backend (read-only OData V2). Always call
+  describeEntitySet FIRST to learn the exact field names and which are filterable, then build the
+  filter from those. The filter is a STRUCTURED array of conditions — each condition is
+  {field, op, value} where op is one of eq, ne, gt, ge, lt, le — and the conditions are AND-ed. Raw
+  $filter strings are NOT accepted. The service, entity set, and every filter field are validated
+  against the capability index BEFORE any backend call; an invalid field yields a helpful list of
+  valid options instead of a failed request. Pass `top` to limit rows (default 20, max 100). Use
+  getByKey instead when you already have a record's key value.
+domain: catalog
+tags:
+  - catalog
+  - query
+  - search
+  - list
+  - dynamic
+examples:
+  - Search A_BusinessPartner in API_BUSINESS_PARTNER where Country eq US
+  - List sales orders created for a customer
+  - Find products of type FERT
+params:
+  - name: service
+    type: string
+    required: true
+    description: OData service technical name (e.g. API_SALES_ORDER_SRV), as returned by listServices.
+  - name: entitySet
+    type: string
+    required: true
+    description: Entity set to query (e.g. A_SalesOrder), as returned by describeService.
+  - name: filter
+    type: filter
+    required: false
+    description: >-
+      Optional structured filter: an array of {field, op, value} conditions AND-ed together. `field`
+      MUST be a filterable property of the entity set (see describeEntitySet); `op` is one of
+      eq, ne, gt, ge, lt, le. Example: [{"field":"Country","op":"eq","value":"US"}].
+  - name: top
+    type: integer
+    required: false
+    min: 1
+    max: 100
+    description: Maximum number of rows to return (default 20, capped at 100).
+backend:
+  operation: dynamic
+  mode: list
+  serviceParam: service
+  entitySetParam: entitySet
+  filterParam: filter
+  top:
+    param: top
+    default: 20
+    max: 100

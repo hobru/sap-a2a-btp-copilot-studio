@@ -1,0 +1,38 @@
+id: get-business-partner-details
+name: Get business partner details
+description: >-
+  Return master-data details of a single business partner (customer or supplier) from the
+  SAP GWSAMPLE_BASIC demo service, identified by its business partner number. Includes the
+  company name, role, legal form, contact details (web, e-mail, phone) and the default
+  currency. Use this to answer "who is business partner 0100000000?" or "give me the
+  contact details of customer 0100000000".
+domain: master-data
+tags: [master-data, business-partner, customer, supplier, contact, gwsample, odata, read]
+examples:
+  - "Show the details of business partner 0100000000."
+  - "What is the company name and e-mail of business partner 100000000?"
+  - "Give me the contact details for business partner 0100000001."
+
+params:
+  - name: businessPartnerId
+    type: string
+    required: true
+    pad: 10
+    description: Business partner number. Padded to 10 characters (e.g. 100000000 -> 0100000000).
+
+backend:
+  namespace: IWBEP
+  service: GWSAMPLE_BASIC
+  entitySet: BusinessPartnerSet
+  operation: getByKey
+  key:
+    - { field: BusinessPartnerID, param: businessPartnerId }
+  select:
+    - BusinessPartnerID
+    - CompanyName
+    - WebAddress
+    - EmailAddress
+    - PhoneNumber
+    - LegalForm
+    - CurrencyCode
+    - BusinessPartnerRole

@@ -1,0 +1,58 @@
+id: list-flights
+name: List flights
+description: >-
+  Return a list of scheduled flights from the SAP RMTSAMPLEFLIGHT demo service. Optionally
+  narrow the result by airline, departure city and/or arrival city. Each entry includes the
+  airline id, connection number, flight date, cities and airports, price, currency and the
+  maximum / occupied seat counts. Use this to answer "list flights" or "show flights from
+  Frankfurt to New York on airline LH".
+
+  NOTE: RMTSAMPLEFLIGHT property names are less standardized than GWSAMPLE_BASIC. Verify the
+  field names below against your own service $metadata before relying on this skill.
+domain: travel
+tags: [travel, flight, flights, airline, connection, rmtsampleflight, odata, read, list, verify-metadata]
+examples:
+  - "List flights on airline LH."
+  - "Show flights from FRA to JFK."
+  - "Which flights go from Frankfurt to New York?"
+
+params:
+  - name: airlineId
+    type: string
+    required: false
+    description: Optional airline / carrier id (carrid), e.g. "LH".
+  - name: fromCity
+    type: string
+    required: false
+    description: Optional departure city (cityFrom), e.g. "Frankfurt".
+  - name: toCity
+    type: string
+    required: false
+    description: Optional arrival city (cityTo), e.g. "New York".
+  - name: top
+    type: integer
+    required: false
+    description: Maximum number of flights to return.
+
+backend:
+  namespace: IWBEP
+  service: RMTSAMPLEFLIGHT
+  entitySet: FlightCollection
+  operation: list
+  filter:
+    - { field: carrid, param: airlineId, operator: eq }
+    - { field: cityFrom, param: fromCity, operator: eq }
+    - { field: cityTo, param: toCity, operator: eq }
+  top: { param: top, default: 20, max: 100 }
+  select:
+    - carrid
+    - connid
+    - fldate
+    - cityFrom
+    - cityTo
+    - airportFrom
+    - airportTo
+    - PRICE
+    - CURRENCY
+    - SEATSMAX
+    - SEATSOCC

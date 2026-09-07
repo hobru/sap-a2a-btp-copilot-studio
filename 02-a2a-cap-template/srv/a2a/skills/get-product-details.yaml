@@ -1,0 +1,39 @@
+id: get-product-details
+name: Get product details
+description: >-
+  Return master-data details of a single product (material) from the SAP GWSAMPLE_BASIC
+  demo service, identified by its product number. Includes the category, name, long
+  description, price, currency, supplier, base unit of measure and weight. Use this to
+  answer "what is product HT-1000?" or "give me the details of material HT-1001".
+domain: master-data
+tags: [master-data, product, material, price, supplier, gwsample, odata, read]
+examples:
+  - "Show the details of product HT-1000."
+  - "What is the price and supplier of material HT-1001?"
+  - "Give me the description and weight of product HT-1002."
+
+params:
+  - name: productId
+    type: string
+    required: true
+    description: Product (material) number, e.g. "HT-1000".
+
+backend:
+  namespace: IWBEP
+  service: GWSAMPLE_BASIC
+  entitySet: ProductSet
+  operation: getByKey
+  key:
+    - { field: ProductID, param: productId }
+  select:
+    - ProductID
+    - Category
+    - Name
+    - Description
+    - Price
+    - CurrencyCode
+    - SupplierID
+    - SupplierName
+    - MeasureUnit
+    - WeightMeasure
+    - WeightUnit

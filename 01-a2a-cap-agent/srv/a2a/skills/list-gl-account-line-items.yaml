@@ -1,0 +1,67 @@
+id: list-gl-account-line-items
+name: List G/L account line items
+description: >-
+  Return general-ledger account line items from the SAP backend for a given company
+  code and G/L account within a posting-date range. A company code, G/L account and
+  posting-date range are mandatory to keep the result set bounded. Each entry includes
+  the accounting document, posting and document dates, amount in company-code currency,
+  debit/credit indicator and item text. Use this to answer "show the postings on G/L
+  account 400000 in company code 1010 for January 2026".
+domain: finance
+tags: [finance, general-ledger, line-items, list, odata, read]
+examples:
+  - "Show the line items on G/L account 400000 in company code 1010 between 2026-01-01 and 2026-01-31."
+  - "List postings for G/L account 0000400000 / company code 1010 in January 2026."
+
+params:
+  - name: companyCode
+    type: string
+    required: true
+    description: Company code (mandatory filter).
+  - name: glAccount
+    type: string
+    required: true
+    pad: 10
+    description: G/L account number, padded to 10 characters (mandatory filter).
+  - name: postingDateFrom
+    type: date
+    required: true
+    description: Start of the posting-date range (inclusive), format YYYY-MM-DD.
+  - name: postingDateTo
+    type: date
+    required: true
+    description: End of the posting-date range (inclusive), format YYYY-MM-DD.
+  - name: top
+    type: integer
+    required: false
+    default: 50
+    min: 1
+    max: 200
+    description: Maximum number of line items to return.
+
+backend:
+  service: API_GLACCOUNTLINEITEM
+  entitySet: GLAccountLineItem
+  operation: list
+  filter:
+    - { field: CompanyCode, param: companyCode, operator: eq }
+    - { field: GLAccount, param: glAccount, operator: eq }
+    - { field: PostingDate, param: postingDateFrom, operator: ge }
+    - { field: PostingDate, param: postingDateTo, operator: le }
+  select:
+    - CompanyCode
+    - FiscalYear
+    - GLAccount
+    - AccountingDocument
+    - PostingDate
+    - DocumentDate
+    - AmountInCompanyCodeCurrency
+    - CompanyCodeCurrency
+    - DebitCreditCode
+    - DocumentItemText
+  orderby:
+    - { field: PostingDate, direction: desc }
+  top:
+    param: top
+    default: 50
+    max: 200

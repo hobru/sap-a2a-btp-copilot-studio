@@ -1,0 +1,45 @@
+# Hand-written META-SKILL (generic, dynamic operation, mode=getByKey). Not generated.
+# Step 4b of the discovery chain — the actual read (single record by key).
+id: get-by-key
+name: Get SAP record by key
+description: >-
+  STEP 4 of catalog discovery — read ONE record by its key. Given a service + entity set and the key
+  value, returns that single record from the SAP backend (read-only OData V2). Call describeEntitySet
+  FIRST to learn the key field name(s). For a single-field key pass the value directly (e.g.
+  "1000000"); for a composite key pass an object mapping each key field to its value (e.g.
+  {"SalesOrder":"1","SalesOrderItem":"10"}). The service, entity set, and key field names are
+  validated against the capability index BEFORE any backend call; a wrong key field yields a helpful
+  list of the entity set's real key fields instead of a failed request. Use searchEntitySet instead
+  when you need to find records by non-key criteria.
+domain: catalog
+tags:
+  - catalog
+  - query
+  - get
+  - record
+  - dynamic
+examples:
+  - Get business partner 1000000 from API_BUSINESS_PARTNER
+  - Read A_SalesOrder with key 500000001
+  - Fetch product TG11 from API_PRODUCT_SRV
+params:
+  - name: service
+    type: string
+    required: true
+    description: OData service technical name (e.g. API_BUSINESS_PARTNER), as returned by listServices.
+  - name: entitySet
+    type: string
+    required: true
+    description: Entity set to read from (e.g. A_BusinessPartner), as returned by describeService.
+  - name: key
+    type: key
+    required: true
+    description: >-
+      Key value(s) identifying the record. Single-field key: pass the scalar value. Composite key:
+      pass an object {keyField: value, ...} using the key field names from describeEntitySet.
+backend:
+  operation: dynamic
+  mode: getByKey
+  serviceParam: service
+  entitySetParam: entitySet
+  keyParam: key

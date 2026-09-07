@@ -1,0 +1,57 @@
+{
+  "name": "a2a-cap-template",
+  "version": "0.1.0",
+  "description": "Tutorial skeleton: config-driven A2A server on SAP CAP you extend with YOUR OWN read-only OData services via a BTP destination + Cloud Connector, consumed by Microsoft Copilot Studio. Same engine as 01-a2a-cap-agent; add skills in YAML, no JS. Ships demo skills over GWSAMPLE_BASIC / RMTSAMPLEFLIGHT (IWBEP).",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "cds-serve",
+    "watch": "cds watch",
+    "validate:skills": "node scripts/validate-skills.js",
+    "list:skills": "node scripts/list-skills.js",
+    "test:nlu": "node scripts/test-nlu.js",
+    "create:skill": "node scripts/create-skill.js"
+  },
+  "dependencies": {
+    "@a2a-js/sdk": "^0.3.10",
+    "@sap-cloud-sdk/connectivity": "^4.0.2",
+    "@sap-cloud-sdk/http-client": "^4.0.2",
+    "@sap/cds": "^9",
+    "@sap/xssec": "^4",
+    "ajv": "^8.17.1",
+    "express": "^4",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@cap-js/sqlite": "^2",
+    "@sap/cds-dk": "^9"
+  },
+  "cds": {
+    "requires": {
+      "auth": {
+        "[production]": {
+          "kind": "ias"
+        },
+        "[development]": {
+          "kind": "mocked",
+          "users": {
+            "dev.user@example.com": {
+              "roles": ["AgentUser"],
+              "email": "dev.user@example.com"
+            }
+          }
+        }
+      },
+      "connectivity": true,
+      "destinations": true
+    },
+    "log": {
+      "service": true,
+      "levels": {
+        "a2a": "info"
+      }
+    }
+  }
+}

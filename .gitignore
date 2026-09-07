@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# CAP build output
+gen/
+mta_archives/
+*.mtar
+resources/
+
+# Local runtime / secrets — NEVER commit
+.env
+default-env.json
+*.local
+
+# Logs
+*.log

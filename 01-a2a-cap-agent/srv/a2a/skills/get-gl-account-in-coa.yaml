@@ -1,0 +1,38 @@
+id: get-gl-account-in-coa
+name: Get G/L account in chart of accounts
+description: >-
+  Return the chart-of-accounts-level master data of a single general-ledger account in
+  the SAP backend, identified by chart of accounts and G/L account number. Includes the
+  G/L account type, account group and corporate group account. Use this to answer "what
+  type of account is 400000 in chart of accounts YCOA?".
+domain: finance
+tags: [finance, general-ledger, chart-of-accounts, master-data, odata, read]
+examples:
+  - "What type of account is G/L account 400000 in chart of accounts YCOA?"
+  - "Show the master data of G/L account 0000400000 in chart of accounts YCOA."
+
+params:
+  - name: chartOfAccounts
+    type: string
+    required: true
+    description: Chart of accounts identifier.
+  - name: glAccount
+    type: string
+    required: true
+    pad: 10
+    description: G/L account number, padded to 10 characters.
+
+backend:
+  service: API_GLACCOUNTINCHARTOFACCOUNTS_SRV
+  entitySet: A_GLAccountInChartOfAccounts
+  operation: getByKey
+  key:
+    - { field: ChartOfAccounts, param: chartOfAccounts }
+    - { field: GLAccount, param: glAccount }
+  select:
+    - ChartOfAccounts
+    - GLAccount
+    - GLAccountType
+    - GLAccountGroup
+    - CorporateGroupAccount
+    - IsBalanceSheetAccount

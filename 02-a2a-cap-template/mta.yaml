@@ -1,0 +1,92 @@
+_schema-version: 3.3.0
+ID: a2a-cap-template
+version: 0.1.0
+description: "Tutorial skeleton A2A server on SAP CAP: deterministic, read-only OData executor you extend with YOUR OWN services via a BTP destination + Cloud Connector, consumed by Microsoft Copilot Studio. Inbound auth via SAP Identity Authentication (IAS) for full SSO."
+parameters:
+  enable-parallel-deployments: true
+
+modules:
+  # ---------------------------------------------------------------------------
+  # Single Node.js module. It serves the A2A Agent Card + JSON-RPC endpoint and
+  # validates inbound IAS JWTs itself (see srv/a2a/auth.js), so there is NO
+  # approuter: Copilot Studio obtains a token from IAS (federated to Entra ID)
+  # and calls this route directly. The app is served from source via `cds-serve`
+  # (npm start), so all declarative skill manifests (srv/a2a/skills/*.yaml) and
+  # the reference catalog ship as-is - no `cds build` staging step to drop them.
+  # ---------------------------------------------------------------------------
+  - name: a2a-cap-template-srv
+    type: nodejs
+    path: .
+    parameters:
+      instances: 1
+      buildpack: nodejs_buildpack
+      memory: 512M
+      disk-quota: 1024M
+    build-parameters:
+      builder: custom
+      commands:
+        - npm ci --omit=dev
+      ignore:
+        - "node_modules/"
+        - ".env"
+        - "gen/"
+    properties:
+      # Advertised in the served Agent Card (url field) and used by A2A clients
+      # for follow-up JSON-RPC calls. Defaults to this module's own route (there
+      # is no approuter in front). Override post-deploy only if fronting the app
+      # with API Management or a custom domain:
+      #   cf set-env a2a-cap-template-srv A2A_SERVER_URL https://<public-url> && cf restage a2a-cap-template-srv
+      A2A_SERVER_URL: ${default-url}
+      # Name of the BTP destination the skills call. On the trial subaccount this
+      # is `pm4-ssl` (Proxy Type Internet + BasicAuthentication, technical user).
+      # It will later be switched to Proxy Type OnPremise + PrincipalPropagation
+      # (Cloud Connector) without any code change - only this value stays the same.
+      SAP_DESTINATION_NAME: pm4-ssl
+    requires:
+      - name: a2a-cap-template-identity
+      - name: a2a-cap-template-connectivity
+      - name: a2a-cap-template-destination
+      - name: a2a-cap-template-logs
+
+resources:
+  # IAS (SAP Identity Authentication). The oauth2-configuration below is
+  # RE-APPLIED on every deploy - edits made directly in the IAS admin UI are
+  # overwritten, so keep the redirect URIs and grant types here. The identity
+  # provider is federated to Entra ID; Copilot Studio logs in via Entra and IAS
+  # mints the token this app validates. The token `aud` must equal this app's
+  # clientid, and an `email` claim (matching SU01) is required for principal
+  # propagation to the on-prem backend.
+  - name: a2a-cap-template-identity
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: identity
+      service-plan: application
+      config:
+        display-name: A2A CAP Template (Copilot Studio)
+        oauth2-configuration:
+          grant-types:
+            - authorization_code
+            - refresh_token
+          redirect-uris:
+            # Browser-based auth against the app's own CF domain.
+            - https://*.${default-domain}/**
+            # Postman desktop + web (for manual testing).
+            - http://localhost:8080/callback
+            - https://oauth.pstmn.io/v1/callback
+            # Microsoft Copilot Studio / Power Platform consent callback.
+            - https://global.consent.azure-apim.net/redirect/**
+  - name: a2a-cap-template-connectivity
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: connectivity
+      service-plan: lite
+  - name: a2a-cap-template-destination
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: destination
+      service-plan: lite
+  - name: a2a-cap-template-logs
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: application-logs
+      service-plan: lite

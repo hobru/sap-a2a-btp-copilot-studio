@@ -1,0 +1,36 @@
+id: get-outbound-delivery-status
+name: Get outbound delivery status
+description: >-
+  Return the current status and header details of a single outbound delivery in the
+  SAP backend, identified by its delivery document number. Includes goods movement
+  status, billing-relevance status and the planned and actual goods issue dates. Use
+  this to answer "has delivery 80001234 been shipped?".
+domain: sales
+tags: [sales, logistics, outbound-delivery, status, odata, read]
+examples:
+  - "What is the status of outbound delivery 80001234?"
+  - "Has delivery 0080001234 been goods-issued yet?"
+
+params:
+  - name: deliveryDocument
+    type: string
+    required: true
+    description: Outbound delivery document number.
+
+backend:
+  service: API_OUTBOUND_DELIVERY_SRV
+  entitySet: A_OutbDeliveryHeader
+  operation: getByKey
+  key:
+    - { field: DeliveryDocument, param: deliveryDocument }
+  select:
+    - DeliveryDocument
+    - DeliveryDocumentType
+    - ShipToParty
+    - ShippingPoint
+    - OverallGoodsMovementStatus
+    - OverallDelivReltdBillgStatus
+    - PlannedGoodsIssueDate
+    - ActualGoodsMovementDate
+    - HeaderGrossWeight
+    - HeaderWeightUnit

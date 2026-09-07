@@ -1,0 +1,150 @@
+# =============================================================================
+# _TEMPLATE.yaml.example  --  annotated reference skill
+# =============================================================================
+# This file is a TEACHING reference. It is intentionally named
+# "_TEMPLATE.yaml.example" (not ".yaml") so the registry and validator SKIP it:
+# they only load files ending in .yaml / .yml. That keeps it off the Agent Card.
+#
+# To turn it into a real skill: copy it to "<my-skill>.yaml", delete the fields
+# you do not need, and fill in the rest. Every field defined in
+# srv/a2a/skill-schema.json is shown below with inline guidance.
+#
+# GROUND RULES for this template (and every skill in this project):
+#   * READ ONLY. Only operation: getByKey or list. Never a write/action.
+#   * OData V2 only.
+#   * Always narrow the read with a $select.
+#   * The `description` is the ONLY hint the Copilot Studio LLM gets to choose
+#     this skill and extract parameters -- make it rich and specific.
+# =============================================================================
+
+# ---- Top-level identity (required: id, name, description, tags) --------------
+
+# Unique, kebab-case id. Also the file name convention (my-skill.yaml).
+id: my-skill
+
+# Human-readable name shown in the Agent Card.
+name: My skill
+
+# Rich description (min 20 chars). Say WHAT it returns and WHEN to use it.
+# Folded block scalar ">-" joins wrapped lines into one string.
+description: >-
+  Describe exactly what this skill returns and when the orchestrator should pick
+  it. Mention the key entity, the important fields, and typical questions it
+  answers. This text is what the Copilot Studio LLM reads to route + extract
+  parameters, so be specific (e.g. "Return header details of one sales order by
+  its number, including customer, amounts, currency and status.").
+
+# Informational grouping only (sales, procurement, finance, master-data, ...).
+# Not sent to the client.
+domain: master-data
+
+# Keywords for the Agent Card (required, at least one).
+tags: [example, template, odata, read]
+
+# Example natural-language prompts this skill handles (Agent Card, optional).
+examples:
+  - "Show the details of X."
+  - "List all Y in category Z."
+
+# Output MIME types, overriding the card default (optional).
+# Defaults to application/json -- you almost never need this.
+# outputModes:
+#   - application/json
+
+# ---- Parameter contract (optional) ------------------------------------------
+# Single source of truth for runtime validation + normalization. key / filter /
+# top entries reference these params by name. Unknown params are ignored.
+params:
+  # A required string key, left-padded with zeros to 10 chars (SAP BP/account
+  # numbers), e.g. 100000000 -> 0100000000.
+  - name: myKey
+    type: string          # string | integer | boolean | date
+    required: true
+    pad: 10               # optional: left-pad (string) value with zeros to width
+    description: The key value, padded to 10 characters.
+
+  # An optional filter value.
+  - name: category
+    type: string
+    required: false
+    description: Optional category to filter on.
+
+  # An optional integer with bounds (min errors below, max silently caps).
+  - name: top
+    type: integer
+    required: false
+    min: 1
+    max: 100
+    description: Maximum number of rows to return.
+
+  # A date param -- YYYY-MM-DD, emitted as an OData V2 datetime literal.
+  # - name: onDate
+  #   type: date
+  #   required: false
+  #   description: A date in YYYY-MM-DD form.
+
+  # A boolean param, e.g. to gate a conditional $expand (see backend.expand.when).
+  # - name: withItems
+  #   type: boolean
+  #   required: false
+  #   default: false
+  #   description: When true, expand the line items.
+
+# ---- Backend binding (required) ---------------------------------------------
+# additionalProperties is false: only the keys below are allowed.
+backend:
+  # OData service technical name. The gateway base path becomes
+  #   /sap/opu/odata/<namespace>/<service>/<entitySet>
+  service: MY_SERVICE
+
+  # THE NAMESPACE GOTCHA -------------------------------------------------------
+  # Optional. Defaults to "sap" (standard S/4HANA APIs live under /sap/opu/odata/sap/).
+  # The SAP demo/reference services live under IWBEP, so those skills MUST set:
+  #     namespace: IWBEP
+  # (e.g. GWSAMPLE_BASIC, RMTSAMPLEFLIGHT). Omit it for normal /sap/ services --
+  # behaviour is then byte-for-byte identical to leaving it out.
+  namespace: sap
+
+  # Entity set to read.
+  entitySet: MyEntitySet
+
+  # getByKey = read ONE document by its key.
+  # list     = read a filtered, $top-capped, $orderby-ed collection.
+  operation: getByKey
+
+  # ---- getByKey ONLY: key fields -------------------------------------------
+  # One entry  -> unnamed key:  MyEntitySet('value')
+  # Several    -> named composite: MyEntitySet(F1='a',F2='b')
+  key:
+    - { field: MyKeyField, param: myKey }
+  # Composite example:
+  #   - { field: Carrid, param: airlineId }
+  #   - { field: Connid, param: connectionId }
+  #   - { field: Fldate, param: flightDate }
+
+  # ---- list ONLY: $filter conditions ---------------------------------------
+  # Optional-param conditions are applied ONLY when that param is supplied.
+  # Multiple entries are AND-ed. operator: eq|ne|gt|ge|lt|le (default eq).
+  # filter:
+  #   - { field: Category, param: category, operator: eq }
+
+  # ---- list ONLY: $orderby --------------------------------------------------
+  # Ordered list of sort keys; direction: asc|desc (default asc).
+  # orderby:
+  #   - { field: Name, direction: asc }
+
+  # ---- list ONLY: $top page-size control -----------------------------------
+  # param overrides the default page size; value is clamped to [1, max].
+  # top: { param: top, default: 20, max: 100 }
+
+  # ---- Optional $expand -----------------------------------------------------
+  # `when` names a boolean param; the expand is added only when it is truthy.
+  # expand:
+  #   - { nav: ToLineItems, when: withItems }
+  #   - { nav: ToProduct }
+
+  # ---- $select (always narrow the read) ------------------------------------
+  select:
+    - MyKeyField
+    - SomeField
+    - AnotherField

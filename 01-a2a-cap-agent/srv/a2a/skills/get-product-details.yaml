@@ -1,0 +1,36 @@
+id: get-product-details
+name: Get product details
+description: >-
+  Return master-data details of a single product (material) in the SAP backend,
+  identified by its product number, together with its language-dependent descriptions.
+  Includes product type, product group, base unit of measure and weights. Use this to
+  answer "what is product TG11?" or "give me the description of material 100-100".
+domain: master-data
+tags: [master-data, product, material, odata, read]
+examples:
+  - "Show the details of product TG11."
+  - "What is the description of material 100-100?"
+
+params:
+  - name: product
+    type: string
+    required: true
+    description: Product (material) number.
+
+backend:
+  service: API_PRODUCT_SRV
+  entitySet: A_Product
+  operation: getByKey
+  key:
+    - { field: Product, param: product }
+  select:
+    - Product
+    - ProductType
+    - ProductGroup
+    - BaseUnit
+    - GrossWeight
+    - NetWeight
+    - WeightUnit
+    - Division
+  expand:
+    - { nav: to_Description }

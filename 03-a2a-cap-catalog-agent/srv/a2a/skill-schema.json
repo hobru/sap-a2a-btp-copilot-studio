@@ -1,0 +1,212 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-mcp-gateway/a2a/skill-schema.json",
+  "title": "A2A skill manifest",
+  "description": "Declarative definition of one A2A skill. Each YAML file under srv/a2a/skills/ is validated against this schema. The same file drives (a) the Agent Card skills[] entry Copilot Studio sees and (b) the deterministic OData call the executor makes. Add a skill = add a file; change a description = edit one line.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "description", "tags", "backend"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Unique, kebab-case skill id. Surfaced in the Agent Card and used by clients to select the skill."
+    },
+    "name": { "type": "string", "minLength": 1, "description": "Human-readable skill name." },
+    "description": {
+      "type": "string",
+      "minLength": 20,
+      "description": "Rich, specific description. This is the ONLY guidance the Copilot Studio LLM gets to pick this skill and extract parameters, so be precise about what it returns and when to use it."
+    },
+    "domain": {
+      "type": "string",
+      "description": "Informational grouping (e.g. sales, procurement, finance, master-data). Not sent to the client."
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "description": "Keywords describing the skill (Agent Card)."
+    },
+    "examples": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Example natural-language prompts this skill handles (Agent Card)."
+    },
+    "outputModes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Output MIME types for this skill, overriding the card default. Defaults to application/json."
+    },
+    "params": {
+      "type": "array",
+      "description": "Parameter contract. Single source of truth for runtime validation and normalization. key/filter/top entries reference these by name.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "type"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "type": {
+            "type": "string",
+            "enum": ["string", "integer", "boolean", "date", "filter", "key"],
+            "description": "date = YYYY-MM-DD (executor formats as OData V2 datetime literal). filter = a STRUCTURED filter array [{field, op(eq/ne/gt/ge/lt/le), value}] consumed by the generic 'dynamic' operation (no raw $filter strings). key = a runtime key value (scalar for single-field keys, or an object {field:value} for composite keys) consumed by the 'dynamic' getByKey mode."
+          },
+          "required": { "type": "boolean", "default": false },
+          "description": { "type": "string" },
+          "pad": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Left-pad the (string) value with zeros to this width before use, e.g. SAP 10-char BP / account numbers."
+          },
+          "default": {},
+          "min": { "type": "integer" },
+          "max": { "type": "integer" }
+        }
+      }
+    },
+    "backend": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operation"],
+      "properties": {
+        "service": {
+          "type": "string",
+          "description": "OData V2 service technical name (STATIC skills only). Base path becomes /sap/opu/odata/<namespace>/<service> (namespace defaults to 'sap'). For the generic 'dynamic'/'catalog' operations the service comes from a runtime param instead — see serviceParam."
+        },
+        "namespace": {
+          "type": "string",
+          "default": "sap",
+          "description": "OData service namespace segment in the gateway path /sap/opu/odata/<namespace>/<service>. Defaults to 'sap' (standard S/4HANA APIs). The SAP demo/reference services live under 'IWBEP' (e.g. GWSAMPLE_BASIC, RMTSAMPLEFLIGHT), so set namespace: IWBEP for those. Omit for normal /sap/ services — behaviour is identical to leaving it out."
+        },
+        "entitySet": { "type": "string", "description": "Entity set to read." },
+        "operation": {
+          "type": "string",
+          "enum": ["getByKey", "list", "catalog", "dynamic"],
+          "description": "getByKey = read one document by its key (STATIC service/entitySet). list = read a filtered, $top-capped collection (STATIC service/entitySet). catalog = LOCAL capability-index lookup, no backend call (powers listServices/describeService/describeEntitySet via `view`). dynamic = GENERIC OData read where service/entitySet/filter/key come from RUNTIME params and are validated against the capability index before any call (powers searchEntitySet/getByKey)."
+        },
+        "view": {
+          "type": "string",
+          "enum": ["listServices", "describeService", "describeEntitySet"],
+          "description": "For operation 'catalog': which slice of the capability index to return. listServices = curated services + domains; describeService = one service's entity sets (needs serviceParam); describeEntitySet = one entity set's keys + filterable/selectable properties (needs serviceParam + entitySetParam)."
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["list", "getByKey"],
+          "description": "For operation 'dynamic': list = filtered collection read (uses filterParam + top); getByKey = single record read (uses keyParam)."
+        },
+        "serviceParam": {
+          "type": "string",
+          "description": "For catalog/dynamic: name of the param carrying the OData service technical name at runtime. Validated against the capability index."
+        },
+        "entitySetParam": {
+          "type": "string",
+          "description": "For catalog/dynamic: name of the param carrying the entity set name at runtime. Validated against the capability index."
+        },
+        "filterParam": {
+          "type": "string",
+          "description": "For dynamic list: name of the STRUCTURED filter param (type 'filter'). Each {field,op,value} is validated (field must be filterable, op in eq/ne/gt/ge/lt/le) and typed via the index before building $filter. Raw $filter strings are never accepted."
+        },
+        "keyParam": {
+          "type": "string",
+          "description": "For dynamic getByKey: name of the key param (type 'key'). Its field(s) must match the entity set's declared key(s) in the index."
+        },
+        "domainParam": {
+          "type": "string",
+          "description": "For catalog listServices: optional param name used to filter the returned services by domain (sales/procurement/finance/master-data)."
+        },
+        "selectParam": {
+          "type": "string",
+          "description": "For dynamic reads: optional param name carrying a comma-separated $select override. Each field is validated against the index; when absent a narrow default $select is derived from the index."
+        },
+        "key": {
+          "type": "array",
+          "description": "For getByKey: the key fields. One entry = unnamed key A_Set('x'); several = named composite A_Set(F1='x',F2='y').",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["field", "param"],
+            "properties": {
+              "field": { "type": "string", "description": "OData property name of the key." },
+              "param": { "type": "string", "description": "Name of the param supplying its value." }
+            }
+          }
+        },
+        "filter": {
+          "type": "array",
+          "description": "For list: $filter conditions. Optional-param conditions are only applied when the param is provided. Multiple entries are AND-ed.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["field", "param"],
+            "properties": {
+              "field": { "type": "string" },
+              "param": { "type": "string" },
+              "operator": {
+                "type": "string",
+                "enum": ["eq", "ne", "gt", "ge", "lt", "le"],
+                "default": "eq"
+              }
+            }
+          }
+        },
+        "select": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "description": "$select field list. Always narrow the read."
+        },
+        "expand": {
+          "type": "array",
+          "description": "$expand navigation properties. `when` makes an expand conditional on a boolean param.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["nav"],
+            "properties": {
+              "nav": { "type": "string" },
+              "when": { "type": "string", "description": "Name of a boolean param; expand added only when truthy." }
+            }
+          }
+        },
+        "orderby": {
+          "type": "array",
+          "description": "$orderby clause as an ordered list of sort keys.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["field"],
+            "properties": {
+              "field": { "type": "string", "description": "Backend property to sort by." },
+              "direction": { "type": "string", "enum": ["asc", "desc"], "default": "asc" }
+            }
+          }
+        },
+        "top": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "For list / dynamic list: page-size control.",
+          "properties": {
+            "param": { "type": "string", "description": "Optional param that overrides the default page size." },
+            "default": { "type": "integer", "minimum": 1, "default": 20 },
+            "max": { "type": "integer", "minimum": 1, "default": 100 }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "operation": { "enum": ["getByKey", "list"] } } },
+          "then": { "required": ["service", "entitySet"] }
+        },
+        {
+          "if": { "properties": { "operation": { "const": "catalog" } } },
+          "then": { "required": ["view"] }
+        },
+        {
+          "if": { "properties": { "operation": { "const": "dynamic" } } },
+          "then": { "required": ["serviceParam", "entitySetParam", "mode"] }
+        }
+      ]
+    }
+  }
+}

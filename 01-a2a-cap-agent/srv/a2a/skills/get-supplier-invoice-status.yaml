@@ -1,0 +1,41 @@
+id: get-supplier-invoice-status
+name: Get supplier invoice status
+description: >-
+  Return the current status and header details of a single supplier (incoming) invoice
+  in the SAP backend, identified by its invoice number and fiscal year. Includes
+  invoicing party, company code, document and posting dates, gross amount, currency and
+  any payment block. Use this to answer "what is the status of supplier invoice
+  5105600123 in fiscal year 2026?".
+domain: finance
+tags: [finance, procurement, supplier-invoice, status, odata, read]
+examples:
+  - "What is the status of supplier invoice 5105600123 for fiscal year 2026?"
+  - "Is supplier invoice 5105600123 / 2026 blocked for payment?"
+
+params:
+  - name: supplierInvoice
+    type: string
+    required: true
+    description: Supplier invoice document number.
+  - name: fiscalYear
+    type: string
+    required: true
+    description: Fiscal year of the supplier invoice (YYYY).
+
+backend:
+  service: API_SUPPLIERINVOICE_PROCESS_SRV
+  entitySet: A_SupplierInvoice
+  operation: getByKey
+  key:
+    - { field: SupplierInvoice, param: supplierInvoice }
+    - { field: FiscalYear, param: fiscalYear }
+  select:
+    - SupplierInvoice
+    - FiscalYear
+    - CompanyCode
+    - InvoicingParty
+    - DocumentDate
+    - PostingDate
+    - InvoiceGrossAmount
+    - DocumentCurrency
+    - PaymentBlockingReason

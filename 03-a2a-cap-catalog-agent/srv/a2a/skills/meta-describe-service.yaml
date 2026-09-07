@@ -1,0 +1,32 @@
+# Hand-written META-SKILL (generic, catalog operation). Not generated.
+# Step 2 of the discovery chain.
+id: describe-service
+name: Describe SAP service
+description: >-
+  STEP 2 of catalog discovery. Given one SAP OData service technical name (e.g. API_BUSINESS_PARTNER),
+  returns every entity set that service exposes with its role (root/child), key field(s) and how many
+  filterable fields it has. Use this AFTER listServices to find the right entity set for the data you
+  need. This is a LOCAL capability-index lookup — it never calls the SAP backend. Next: call
+  describeEntitySet with this service plus one entity set to learn the exact field names before you
+  search or read a record.
+domain: catalog
+tags:
+  - catalog
+  - discovery
+  - entity-sets
+  - metadata
+examples:
+  - Describe API_BUSINESS_PARTNER
+  - What entity sets does API_SALES_ORDER_SRV have?
+  - Show the tables in API_PRODUCT_SRV
+params:
+  - name: service
+    type: string
+    required: true
+    description: >-
+      OData service technical name to describe, exactly as returned by listServices
+      (e.g. API_BUSINESS_PARTNER, API_SALES_ORDER_SRV).
+backend:
+  operation: catalog
+  view: describeService
+  serviceParam: service

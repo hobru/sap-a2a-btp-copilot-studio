@@ -1,0 +1,61 @@
+{
+  "name": "a2a-cap-catalog-agent",
+  "version": "0.1.0",
+  "description": "SAP Catalog Agent — generic SAP OData catalog agent: a deterministic, read-only A2A server on SAP CAP that fronts ANY SAP backend's OData catalog. Ships generic meta-skills (listServices/describeService/describeEntitySet/searchEntitySet/getByKey) backed by a generated capability index, plus a curated featured subset. All LLM reasoning lives in Microsoft Copilot Studio; the app itself is a deterministic OData V2 executor.",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "cds-serve",
+    "watch": "cds watch",
+    "validate:skills": "node scripts/validate-skills.js",
+    "list:skills": "node scripts/list-skills.js",
+    "test:nlu": "node scripts/test-nlu.js",
+    "create:skill": "node scripts/create-skill.js",
+    "fetch:metadata": "node scripts/fetch-metadata.js",
+    "gen:catalog": "node scripts/gen-catalog.js",
+    "gen:skills": "node scripts/gen-skills.js",
+    "gen:all": "node scripts/fetch-metadata.js && node scripts/gen-catalog.js && node scripts/gen-skills.js"
+  },
+  "dependencies": {
+    "@a2a-js/sdk": "^0.3.10",
+    "@sap-cloud-sdk/connectivity": "^4.0.2",
+    "@sap-cloud-sdk/http-client": "^4.0.2",
+    "@sap/cds": "^9",
+    "@sap/xssec": "^4",
+    "ajv": "^8.17.1",
+    "express": "^4",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@cap-js/sqlite": "^2",
+    "@sap/cds-dk": "^9"
+  },
+  "cds": {
+    "requires": {
+      "auth": {
+        "[production]": {
+          "kind": "ias"
+        },
+        "[development]": {
+          "kind": "mocked",
+          "users": {
+            "dev.user@example.com": {
+              "roles": ["AgentUser"],
+              "email": "dev.user@example.com"
+            }
+          }
+        }
+      },
+      "connectivity": true,
+      "destinations": true
+    },
+    "log": {
+      "service": true,
+      "levels": {
+        "a2a": "info"
+      }
+    }
+  }
+}

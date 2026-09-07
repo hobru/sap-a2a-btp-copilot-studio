@@ -1,0 +1,36 @@
+id: get-business-partner-details
+name: Get business partner details
+description: >-
+  Return master-data details of a single business partner (customer, supplier or
+  contact) in the SAP backend, identified by its business partner number, together
+  with its addresses (city, street, country, postal code). Use this to answer "who is
+  business partner 100123?" or "what is the address of customer 100123?".
+domain: master-data
+tags: [master-data, business-partner, customer, supplier, odata, read]
+examples:
+  - "Show the details of business partner 100123."
+  - "What is the address of customer 0000100123?"
+
+params:
+  - name: businessPartner
+    type: string
+    required: true
+    pad: 10
+    description: Business partner number. Padded to 10 characters.
+
+backend:
+  service: API_BUSINESS_PARTNER
+  entitySet: A_BusinessPartner
+  operation: getByKey
+  key:
+    - { field: BusinessPartner, param: businessPartner }
+  select:
+    - BusinessPartner
+    - BusinessPartnerFullName
+    - BusinessPartnerCategory
+    - BusinessPartnerGrouping
+    - OrganizationBPName1
+    - FirstName
+    - LastName
+  expand:
+    - { nav: to_BusinessPartnerAddress }

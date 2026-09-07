@@ -1,0 +1,45 @@
+{
+  "_comment": "DESIGN ARTIFACT — illustrative A2A Agent Card for the prep package. NOT deployed config. Field names/shape must be confirmed against the pinned @a2a-js/sdk version at build time. Replace <placeholders> with real values.",
+  "name": "SAP Backend Agent",
+  "description": "Read access to SAP Sales, Procurement and Finance data via OData through a BTP destination and Cloud Connector.",
+  "url": "https://<your-approuter-route>",
+  "provider": {
+    "organization": "<your-org>",
+    "url": "https://<your-org-url>"
+  },
+  "version": "0.1.0",
+  "protocolVersion": "0.3.0",
+  "capabilities": {
+    "streaming": true,
+    "pushNotifications": false,
+    "stateTransitionHistory": false
+  },
+  "defaultInputModes": ["text"],
+  "defaultOutputModes": ["text", "json"],
+  "securitySchemes": {
+    "sap_ias_sso": {
+      "type": "oauth2",
+      "flows": {
+        "authorizationCode": {
+          "authorizationUrl": "https://<your-ias-tenant>.accounts.ondemand.com/oauth2/authorize",
+          "tokenUrl": "https://<your-ias-tenant>.accounts.ondemand.com/oauth2/token",
+          "scopes": {}
+        }
+      }
+    }
+  },
+  "security": [{ "sap_ias_sso": [] }],
+  "skills": [
+    {
+      "id": "get-sales-order-status",
+      "name": "Get sales order status",
+      "description": "Returns the header and overall status of a single sales order, given its sales order number.",
+      "tags": ["sales", "odata", "read"],
+      "examples": [
+        "What is the status of sales order 12345?",
+        "Show me the details of sales order number 12345."
+      ],
+      "outputModes": ["application/json"]
+    }
+  ]
+}

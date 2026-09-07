@@ -1,0 +1,42 @@
+id: list-products
+name: List products
+description: >-
+  Return a list of products (materials) from the SAP GWSAMPLE_BASIC demo service. Optionally
+  narrow the result to a single product category. Each entry includes the product number,
+  type code, category, name, price, currency and supplier name. Use this to answer "list
+  products" or "show all products in category Notebooks".
+domain: master-data
+tags: [master-data, product, products, material, catalog, category, gwsample, odata, read, list]
+examples:
+  - "List 20 products with number, name, price and supplier."
+  - "Show all products in category Notebooks."
+  - "Give me the 10 cheapest-looking products (just list them)."
+
+params:
+  - name: category
+    type: string
+    required: false
+    description: Optional product category to filter on (exact match, e.g. "Notebooks").
+  - name: top
+    type: integer
+    required: false
+    description: Maximum number of products to return.
+
+backend:
+  namespace: IWBEP
+  service: GWSAMPLE_BASIC
+  entitySet: ProductSet
+  operation: list
+  filter:
+    - { field: Category, param: category, operator: eq }
+  orderby:
+    - { field: Name, direction: asc }
+  top: { param: top, default: 20, max: 100 }
+  select:
+    - ProductID
+    - TypeCode
+    - Category
+    - Name
+    - Price
+    - CurrencyCode
+    - SupplierName

@@ -1,0 +1,43 @@
+id: list-sales-order-line-items
+name: List sales order line items
+description: >-
+  Return the line items (positions) of a single sales order from the SAP GWSAMPLE_BASIC
+  demo service. Requires the sales order number and lists each item position with its
+  product, quantity, unit, gross amount, currency and delivery date. Use this to answer
+  "what is on sales order 0500000000?" or "show the items of order 0500000001".
+domain: sales
+tags: [sales, sales-order, line-item, item, position, product, quantity, gwsample, odata, read, list]
+examples:
+  - "Show the line items of sales order 0500000000."
+  - "What products are on order 0500000001?"
+  - "List the positions and quantities for sales order 0500000002."
+
+params:
+  - name: salesOrderId
+    type: string
+    required: true
+    description: Sales order number whose line items should be listed, e.g. "0500000000".
+  - name: top
+    type: integer
+    required: false
+    description: Maximum number of line items to return.
+
+backend:
+  namespace: IWBEP
+  service: GWSAMPLE_BASIC
+  entitySet: SalesOrderLineItemSet
+  operation: list
+  filter:
+    - { field: SalesOrderID, param: salesOrderId, operator: eq }
+  orderby:
+    - { field: ItemPosition, direction: asc }
+  top: { param: top, default: 20, max: 100 }
+  select:
+    - SalesOrderID
+    - ItemPosition
+    - ProductID
+    - Quantity
+    - QuantityUnit
+    - GrossAmount
+    - CurrencyCode
+    - DeliveryDate

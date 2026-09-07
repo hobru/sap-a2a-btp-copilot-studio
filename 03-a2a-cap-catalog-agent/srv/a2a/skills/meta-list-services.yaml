@@ -1,0 +1,32 @@
+# Hand-written META-SKILL (generic, catalog operation). Not generated.
+# Step 1 of the discovery chain: listServices -> describeService ->
+# describeEntitySet -> searchEntitySet / getByKey.
+id: list-services
+name: List SAP services
+description: >-
+  STEP 1 of catalog discovery. Returns the curated list of SAP OData services this agent can read,
+  each with its business domain (sales, procurement, finance, master-data) and how many entity sets
+  it exposes. Call this FIRST when you do not yet know which service holds the data. This is a LOCAL
+  capability-index lookup — it never calls the SAP backend. Optionally pass `domain` to narrow the
+  list to one area. Next: call describeService with a service name to see its entity sets.
+domain: catalog
+tags:
+  - catalog
+  - discovery
+  - services
+  - metadata
+examples:
+  - What SAP services are available?
+  - List the finance services
+  - Which services can you read?
+params:
+  - name: domain
+    type: string
+    required: false
+    description: >-
+      Optional business domain filter (e.g. sales, procurement, finance, master-data). When omitted,
+      all curated services are returned.
+backend:
+  operation: catalog
+  view: listServices
+  domainParam: domain
