@@ -82,7 +82,7 @@ sequenceDiagram
   C->>A: describeService(service=API_SALES_ORDER_SRV) %% catalog op — local
   A-->>C: entity sets (A_SalesOrder, A_SalesOrderItem…)
   C->>A: describeEntitySet(API_SALES_ORDER_SRV, A_SalesOrder) %% catalog op — local
-  A-->>C: keys=[SalesOrder]; filterable/selectable fields + types
+  A-->>C: keys=[SalesOrder], filterable/selectable fields + types
   C->>A: searchEntitySet(service, entitySet, filter=[{SoldToParty eq 17100001}], top=10) %% dynamic op
   A->>A: validate service+set+fields+ops vs index
   A-->>C: rows (real OData GET) — or input-required listing valid fields
