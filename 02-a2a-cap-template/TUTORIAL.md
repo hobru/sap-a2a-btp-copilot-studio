@@ -97,9 +97,9 @@ adding service 7–8 shows **one agent fronting two independent backends**
 
 ### Tooling (local)
 
-- **Node 20+** and the CAP dev kit: `npm i -g @sap/cds-dk` (then `cds -v` prints a
+- **Node.js 22.13+** and the CAP 10 dev kit: `npm ci` installs the local kit (`npx cds -v` prints a
   cds-dk version).
-- For deploy: the **`cf` CLI** (Cloud Foundry) and **`mbt`** (Cloud MTA Build Tool).
+- For deploy: the **`cf` CLI** (Cloud Foundry) and **`mbt` 1.2.49 or later**. Do not use `mbt` 1.2.48.
 - Windows is assumed throughout (PowerShell examples). macOS/Linux users: swap
   backslashes for forward slashes and `Copy-Item` for `cp`.
 
@@ -146,7 +146,7 @@ call.
 
 ```powershell
 cd 02-a2a-cap-template
-npm install                      # first run resolves @sap/cds etc.
+npm ci                           # installs the exact versions in package-lock.json
 Copy-Item .env.example .env      # local dev only; .env is gitignored — never commit it
 npm run start                    # cds-serve: compiles + deploys in-memory sqlite, then listens
 ```
@@ -158,7 +158,7 @@ sqlite). Wait for:
 [a2a] Agent "SAP Backend Agent" ready with 8 skill(s); card at /.well-known/agent-card.json
 ```
 
-> **Offline?** `npm install` needs network the first time to fetch dependencies. If
+> **Offline?** `npm ci` needs network the first time to fetch dependencies. If
 > your machine is fully air-gapped, run it once where you have access and copy
 > `node_modules/` over. The runtime itself needs no network for local dev — it never
 > calls SAP until you bind a destination.

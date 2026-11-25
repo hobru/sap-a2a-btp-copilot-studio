@@ -12,8 +12,8 @@ under [`docs/`](./docs). This file is the *how*.
 
 ## 1. Prerequisites
 
-- Node 20+, and `@sap/cds-dk` global (`cds -v` shows a cds-dk version).
-- `cf` CLI (Cloud Foundry) and `mbt` (Cloud MTA Build Tool) for build/deploy.
+- Node.js 22.13 or later. `npm ci` installs the locked CAP 10 development kit.
+- `cf` CLI (Cloud Foundry) and `mbt` 1.2.49 or later for build/deploy. Do not use `mbt` 1.2.48.
 - Access to the BTP trial subaccount (region **ap21**,
   API endpoint `https://api.cf.ap21.hana.ondemand.com`) with entitlements for
   `identity` (plan `application`), `destination` (lite), `connectivity` (lite),

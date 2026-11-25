@@ -8,7 +8,7 @@ OData services and add skills in **YAML — no JavaScript**. Reasoning stays in
 ## 👉 Start with the tutorial
 
 **[TUTORIAL.md](./TUTORIAL.md)** is the centerpiece — a copy-paste-runnable, 10-step
-guide from *"npm install"* to *"registered in Copilot Studio"*. It covers running the
+guide from *"npm ci"* to *"registered in Copilot Studio"*. It covers running the
 engine in 5 minutes, the skill-YAML anatomy (incl. the `sap` vs `IWBEP` namespace
 gotcha), scaffolding skills, two orchestration patterns, and deployment.
 
@@ -46,7 +46,7 @@ gotcha), scaffolding skills, two orchestration patterns, and deployment.
 
 ```powershell
 cd 02-a2a-cap-template
-npm install
+npm ci
 Copy-Item .env.example .env          # local dev only; never commit .env
 npm run start                        # then open http://localhost:4004/.well-known/agent-card.json
 ```
