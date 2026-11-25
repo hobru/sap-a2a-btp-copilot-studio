@@ -224,7 +224,7 @@ and excluded here.
 
 ```powershell
 cd 03-a2a-cap-catalog-agent
-npm install                 # deterministic via package-lock.json
+npm ci                      # uses package-lock.json; requires Node.js 22.13+
 
 npm run validate:skills     # all 13 skills valid, unique ids, schema + *Param rules
 npm run list:skills         # print id / name / operation for every skill
@@ -247,8 +247,8 @@ reused unchanged.
 
 ```powershell
 cd 03-a2a-cap-catalog-agent
-npm install
-mbt build                                   # produces mta_archives\*.mtar
+npm ci
+mbt build                                   # use mbt 1.2.49 or later, not 1.2.48
 cf login -a <CF_API> --sso
 cf deploy mta_archives\a2a-cap-catalog-agent_0.1.0.mtar
 ```
